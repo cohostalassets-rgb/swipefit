@@ -1,0 +1,7 @@
+const C='swipefit-v1',F=['./','index.html','style.css','data.js','app.js','manifest.json','icon-192.png','icon-512.png'];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(F)));self.skipWaiting()});
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))});
+self.addEventListener('periodicsync',e=>{if(e.tag==='sf-remind')e.waitUntil(self.registration.showNotification('SwipeFit 🔥',{body:'Swipe tomorrow\'s workout 😴',icon:'icon-192.png'}))});
+self.addEventListener('push',e=>{const d=e.data?e.data.text():'Time to swipe! 🔥';e.waitUntil(self.registration.showNotification('SwipeFit',{body:d,icon:'icon-192.png'}))});
+self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil(clients.openWindow('./#train'))});

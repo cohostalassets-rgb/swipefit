@@ -1,0 +1,44 @@
+:root{--bg:#1b1640;--card:#fff;--up:#2f7bff;--low:#ff8a1f;--yes:#1fc46b;--no:#ff4d6d;--ink:#1a1a2e;--hl:#ff3d7f}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:#fff;font-family:Verdana,"Trebuchet MS",Arial,sans-serif;font-size:20px;line-height:1.5;letter-spacing:.03em;word-spacing:.12em;overscroll-behavior:none}
+header{padding:calc(env(safe-area-inset-top) + 8px) 14px 6px;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:8px;align-items:center}
+.pill{border:0;border-radius:999px;padding:10px 16px;font:inherit;font-weight:700;font-size:18px;background:#ffffff22;color:#fff}
+.pill.on{background:#fff;color:var(--ink)}
+.type{padding:6px 14px;border-radius:12px;font-weight:800;font-size:20px}
+.U{background:var(--up)}.L{background:var(--low)}
+.dots{display:flex;gap:8px;flex:1}.dot{flex:1;height:14px;border-radius:7px;background:#ffffff30}.dot.f{background:var(--yes)}
+main{padding:6px 14px 110px}
+#deck{position:relative;height:min(62vh,560px)}
+.card{position:absolute;inset:0;background:var(--card);color:var(--ink);border-radius:26px;padding:14px;box-shadow:0 10px 30px #0008;display:flex;flex-direction:column;touch-action:none;user-select:none;will-change:transform}
+.card h2{margin:0;font-size:26px;line-height:1.2}
+.tag{display:inline-block;border-radius:10px;padding:2px 10px;color:#fff;font-weight:700;font-size:16px;margin-right:6px}
+.cb{display:flex;gap:10px;flex:1;min-height:0;margin-top:8px}
+.bodies{flex:1.3;display:flex;justify-content:center;align-items:center;background:#f2f0ff;border-radius:18px}
+.bodies svg{height:100%;max-height:300px;width:100%}
+.steps{flex:1;display:flex;flex-direction:column;gap:6px}
+.step{flex:1;background:#fff7d6;border-radius:14px;padding:6px 8px;font-size:16px;font-weight:700;display:flex;gap:6px;align-items:center;line-height:1.25}
+.step b{background:var(--ink);color:#fff;border-radius:50%;min-width:28px;height:28px;display:grid;place-items:center;font-size:16px}
+.vid{margin-top:8px;display:block;text-align:center;background:#ff0033;color:#fff;font-weight:800;border-radius:14px;padding:10px;text-decoration:none;font-size:19px}
+.stamp{position:absolute;top:24px;font-size:34px;font-weight:900;padding:4px 14px;border:5px solid;border-radius:12px;opacity:0}
+.stamp.y{left:20px;color:var(--yes);transform:rotate(-14deg)}.stamp.n{right:20px;color:var(--no);transform:rotate(14deg)}
+.btns{display:flex;justify-content:center;gap:28px;margin-top:14px}
+.big{width:78px;height:78px;border-radius:50%;border:0;font-size:38px;box-shadow:0 6px 16px #0006}
+.big.n{background:var(--no)}.big.y{background:var(--yes)}
+.sets{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:10px;font-weight:800}
+.sets button{width:46px;height:46px;border-radius:50%;border:0;font-size:26px;font-weight:900}
+.warn{background:#ffd23f;color:var(--ink);border-radius:14px;padding:8px 12px;font-weight:700;margin-top:10px;text-align:center}
+.done{text-align:center;padding:30px 10px}.done .e{font-size:90px}
+.box{background:#ffffff14;border-radius:18px;padding:12px;margin-bottom:12px}
+.box h3{margin:0 0 6px;font-size:22px}
+.item{display:flex;align-items:center;gap:8px;background:#fff;color:var(--ink);border-radius:12px;padding:8px;margin:6px 0;font-weight:700;font-size:17px}
+.item .nm{flex:1;line-height:1.2}
+.item select,.item button{font:inherit;font-size:15px;border-radius:10px;border:2px solid #ccc;padding:4px}
+.mini{width:40px;height:64px;flex:none}
+.wk{display:grid;gap:8px}
+.wd{border-radius:16px;padding:10px;background:#ffffff14;border-left:10px solid}
+.wd.U{border-color:var(--up)}.wd.L{border-color:var(--low)}.wd.today{outline:3px solid #fff}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#0d0a26;padding:6px 6px calc(env(safe-area-inset-bottom) + 6px)}
+nav button{flex:1;background:none;border:0;color:#fff9;font-size:28px;display:flex;flex-direction:column;align-items:center;font-family:inherit}
+nav button span{font-size:15px;font-weight:700}nav button.on{color:#fff}
+#confetti{position:fixed;inset:0;pointer-events:none;width:100%;height:100%}
