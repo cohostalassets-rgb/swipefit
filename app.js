@@ -18,12 +18,26 @@ const iso=d=>{d=new Date(d);return d.getFullYear()+'-'+String(d.getMonth()+1).pa
 const parse=s=>{const[a,b,c]=s.split('-');return new Date(a,b-1,c)};
 const addD=(s,n)=>iso(parse(s).getTime()+n*DAY+3600e3*3);
 const today=()=>iso(new Date());
-let S=JSON.parse(localStorage.swipefit||'null')||{anchor:today(),plan:{},later:{},skips:{},notes:{},exNotes:{},hist:{},lastOpen:0};
-const save=()=>localStorage.swipefit=JSON.stringify(S);
+const fresh=()=>({anchor:today(),plan:{},later:{},skips:{},notes:{},exNotes:{},hist:{},lastOpen:0,filt:{ul:[],ch:[],pp:[]}});
+let PR=JSON.parse(localStorage.sf_profiles||'null')||{list:[]},S=fresh(),UID=null;
+const saveP=()=>localStorage.sf_profiles=JSON.stringify(PR);
+const save=()=>{if(UID)localStorage['swipefit:'+UID]=JSON.stringify(S)};
+let prevOpen=0;
+function loadUser(id){UID=id;PR.cur=id;saveP();S=Object.assign(fresh(),JSON.parse(localStorage['swipefit:'+id]||'null')||{});
+ const u=PR.list.find(x=>x.id===id);S.sex=u.sex;prevOpen=S.lastOpen;S.lastOpen=Date.now();save();sel=addD(today(),1);render();if(!S.tour)tour(1)}
+function addUser(name,sex){const id='u'+Date.now().toString(36);PR.list.push({id,name,sex});
+ if(PR.list.length===1&&localStorage.swipefit){const old=JSON.parse(localStorage.swipefit);old.tour=1;localStorage['swipefit:'+id]=JSON.stringify(old);localStorage.removeItem('swipefit')}
+ saveP();loadUser(id)}
+function who(){document.querySelectorAll('.modal').forEach(m=>m.remove());const m=document.createElement('div');m.className='modal full';
+ m.innerHTML=`<div class="card prof whoc"><div style="font-size:60px;text-align:center">🏋️</div><h2 style="text-align:center">Who's working out?</h2>
+ <div class="who">${PR.list.map(u=>`<button class="pill wb" data-id="${u.id}">${u.sex==='m'?'👨':'👩'} ${u.name.replace(/</g,'')}</button>`).join('')}
+ <button class="pill add">➕ Add person</button></div></div>`;
+ document.body.appendChild(m);m.querySelectorAll('.wb').forEach(b=>b.onclick=()=>{m.remove();loadUser(b.dataset.id)});
+ m.querySelector('.add').onclick=()=>{m.querySelector('.who').innerHTML=`<input class="nm-in" placeholder="Name" maxlength="20"><div class="btns"><button class="pill sx" data-s="f">👩 Woman</button><button class="pill sx" data-s="m">👨 Man</button></div>`;
+  const inp=m.querySelector('.nm-in');inp.focus();m.querySelectorAll('.sx').forEach(b=>b.onclick=()=>{const n=inp.value.trim();if(!n){inp.style.borderColor='red';inp.focus();return}m.remove();addUser(n,b.dataset.s)})}}
 const type=d=>(Math.round((parse(d)-parse(S.anchor))/DAY)%2+2)%2?'L':'U';
 const TN={U:'💪 UPPER',L:'🦵 LOWER'};
 let sel=addD(today(),1), tab='swipe', setsN=4;
-const prevOpen=S.lastOpen; S.lastOpen=Date.now(); save();
 
 /* ---------- body SVG ---------- */
 const FRONT={shoulders:['<ellipse cx="29" cy="46" rx="9" ry="7"/>','<ellipse cx="71" cy="46" rx="9" ry="7"/>'],
@@ -68,13 +82,14 @@ function thumbA(id,st){const k=KIN[id],back=BACKR.includes(k.hp[0]);return `<svg
 const CH={A:['Anterior chain','#2f7bff'],P:['Posterior chain','#7b3fe4'],B:['Anterior + Posterior','linear-gradient(90deg,#2f7bff,#7b3fe4)'],L:['Lateral (side)','#00a3a3']};
 function kin(e){const k=KIN[e[0]];return `<div class="chips"><span class="chip" style="background:${CH[k.chain][1]}">⛓ ${CH[k.chain][0]}</span><span class="chip" style="background:#e53935">🎯 Prime: ${k.pm}</span>
  <span class="chip" style="background:#fb8c00">🤝 Helpers: ${k.syn}</span>${k.stab&&k.stab!=='—'?`<span class="chip" style="background:#607d8b">🧱 Stabilize: ${k.stab}</span>`:''}<span class="chip" style="background:#2e7d32">⚙️ ${k.act}</span></div>`}
-function profileBody(e,open){return `<h2>${e[1]}</h2><div><span class="tag ${e[2]}">${e[4]}</span><span style="font-size:16px">${e[5]}</span></div>
- <div class="anatwrap">${anatomy(e)}</div>
- <div class="legend"><span style="color:#e53935">■ Prime</span> <span style="color:#fb8c00">▦ Helpers</span></div>
- <div class="mv">${GIF[e[0]]?`<div class="animbox"><img src="img/anim/${GIF[e[0]]}" alt="motion" style="width:100%;height:100%;object-fit:cover;border-radius:16px"></div>`:''}<div style="flex:1"><span class="chip pm" style="background:#e53935">🎯 ${KIN[e[0]].pm}</span>
- <details ${open?'open':''}><summary>➕ More</summary>${kin(e)}</details></div></div>
- <div class="steps">${e[6].map((s,i)=>`<div class="step"><b>${i+1}</b><span>${ICON[i]} ${s}</span></div>`).join('')}</div>
- <a class="vid" href="${vidLink(e)}" target="_blank" rel="noopener">▶ Watch how${e[7]?'':' (search)'}</a>`}
+function profileBody(e){const k=KIN[e[0]];return `<h2 class="ttl">${e[1]}</h2><div class="meta"><span class="tag ${e[2]}">${e[4]}</span> ${e[5]}</div>
+ <div class="anatwrap">${anatomy(e)}${GIF[e[0]]?`<img class="gif" src="img/anim/${GIF[e[0]]}" alt="motion">`:''}</div>
+ <div class="prow"><span class="chip pm">🎯 ${k.pm}</span><button class="morebtn" onclick="event.stopPropagation();openKin('${e[0]}')">ℹ️ More</button></div>
+ <div class="steps">${e[6].map((s,i)=>`<div class="step"><b>${i+1}</b><span>${s}</span></div>`).join('')}</div>
+ <a class="vid" href="${vidLink(e)}" target="_blank" rel="noopener">▶ Watch how</a>`}
+function openKin(id){const e=BY[id],m=document.createElement('div');m.className='modal full';
+ m.innerHTML=`<div class="card prof"><h2 class="ttl">${e[1]}</h2><div class="legend"><span style="color:#e53935">■ Prime</span> <span style="color:#fb8c00">■ Helpers</span></div>${kin(e)}<div class="btns"><button class="pill keep">✔ Got it</button></div></div>`;
+ document.body.appendChild(m);m.querySelector('.keep').onclick=()=>m.remove()}
 const vidLink=e=>e[7]?'https://www.youtube.com/watch?v='+e[7]:'https://www.youtube.com/results?search_query='+encodeURIComponent(e[1]+' form short');
 
 /* ---------- helpers ---------- */
@@ -88,13 +103,11 @@ const dlabel=d=>d===today()?'Today':d===addD(today(),1)?'Tomorrow':WD[parse(d).g
 
 /* ---------- header / nudges ---------- */
 function header(){
- const p=plan(sel).length;let h='';
+ const p=plan(sel).length;let h='';const u=PR.list.find(x=>x.id===UID);
  const tp=S.plan[today()]||[],unfinished=tp.length&&tp.some(x=>x.done.filter(Boolean).length<x.sets);
- if(prevOpen&&Date.now()-prevOpen>DAY)h+='<div class="warn">👋 Welcome back! Pick tomorrow\'s moves 🔥</div>';
- if(unfinished)h+='<div class="warn" onclick="go(\'train\')">⏰ Today\'s workout isn\'t done → tap to train 💪</div>';
- h+=`<div class="row" style="justify-content:space-between;font-size:15px"><a href="CREDITS.md" target="_blank" style="color:#fff9">ⓒ Art credits</a><button class="pill" onclick="chooseSex()" style="padding:4px 12px">⚙️ ${S.sex==='m'?'👨':'👩'}</button></div>`;
- if(tab==='swipe')h+=`<div class="row"><button class="pill ${sel===today()?'on':''}" onclick="pick(0)">Today</button><button class="pill ${sel===addD(today(),1)?'on':''}" onclick="pick(1)">Tomorrow</button><button class="pill ${S.mix?'':'on'} type ${type(sel)}" onclick="S.mix=0;save();render()" ondblclick="flipType()">${TN[type(sel)]}</button><button class="pill ${S.mix?'on':''}" onclick="S.mix=1;save();render()">🌈 All</button></div>
- <div class="addto">➕ Adding to: <b>${dlabel(sel)}</b> ${S.mix?'🌈 All':TN[type(sel)]}</div><div class="row"><div class="dots">${[0,1,2,3,4].map(i=>`<div class="dot ${i<p?'f':''}"></div>`).join('')}</div><b>${p}/5</b></div>`;
+ const nudge=unfinished?'<div class="nudge" onclick="go(\'train\')">⏰ Workout not done → 💪</div>':(prevOpen&&Date.now()-prevOpen>DAY)?'<div class="nudge">👋 Welcome back!</div>':'';
+ h+=`<div class="row top1">${tab==='swipe'?`<button class="pill ${sel===today()?'on':''}" onclick="pick(0)">Today</button><button class="pill ${sel===addD(today(),1)?'on':''}" onclick="pick(1)">Tmrw</button><button class="pill ${S.mix?'':'on'} ${type(sel)}" onclick="S.mix=0;save();render()">${type(sel)==='U'?'💪 Up':'🦵 Low'}</button><button class="pill ${S.mix?'on':''}" onclick="S.mix=1;save();render()">🌈 All</button>`:`<span style="flex:1"></span>`}<button class="pill usr" onclick="who()">👤${u?u.name.replace(/</g,'').slice(0,1).toUpperCase():''}</button><button class="pill" onclick="chooseSex()" aria-label="Settings">⚙️</button></div>${nudge}`;
+ if(tab==='swipe')h+=`<div class="addto">➕ <b>${dlabel(sel)}</b> ${S.mix?'🌈':TN[type(sel)].split(' ')[0]} <span class="dots">${[0,1,2,3,4].map(i=>`<i class="dot ${i<p?'f':''}"></i>`).join('')}</span> <b>${p}/5</b>${p<3?' ⚠️':''}</div>`;
  T.innerHTML=h;}
 function nextOpen(d){for(let n=1;n<=14;n++){const t=addD(d,n);if(plan(t).length<5)return t}return null}
 function toast(t){const el=document.createElement('div');el.className='toast';el.innerHTML=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2200)}
@@ -109,9 +122,8 @@ function swipeView(){
  const D=deck(sel);if(!D.length){V.innerHTML=filterBar(!S.mix)+`<div class="done"><div class="e">🃏</div><h2>No cards</h2><button class="pill on" onclick="fAll()">✨ Show all</button> ${S.last?'<button class="pill" onclick="undo()">↩️ Undo</button>':''}</div>`;return}
  const e=D[0],nx=D[1];
  V.innerHTML=filterBar(!S.mix)+`<div id="deck">${nx?card(nx,'nx'):''}${card(e,'top')}</div>
- <div class="sets">Sets: <button onclick="setS(-1)">−</button><span style="font-size:30px">${'●'.repeat(setsN)}</span><button onclick="setS(1)">+</button></div>
- <div class="btns"><button class="big n" onclick="decide(false)" aria-label="Skip">✖</button><button class="big u" onclick="undo()" ${S.last?'':'disabled'} aria-label="Undo">↩️</button><button class="big y" onclick="decide(true)" aria-label="Like">💚</button></div>
- ${p.length<3?`<div class="warn">⚠️ Need at least 3 (have ${p.length})</div>`:''}`;
+ <div class="ctl"><button class="big n" onclick="decide(false)" aria-label="Skip">✖</button><button class="big u" onclick="undo()" ${S.last?'':'disabled'} aria-label="Undo">↩️</button><div class="sets"><button onclick="setS(-1)">−</button><span>${'●'.repeat(setsN)}</span><button onclick="setS(1)">+</button></div><button class="big y" onclick="decide(true)" aria-label="Like">💚</button></div>
+ `;
  if(nx)$('#deck .nx').style.transform='scale(.95) translateY(10px)';
  drag($('#deck .top'));}
 function card(e,c){return `<div class="card ${c}" data-id="${e[0]}"><div class="stamp y">YES</div><div class="stamp n">NOPE</div>${c==='top'?profileBody(e):`<h2>${e[1]}</h2>`}</div>`}
@@ -147,25 +159,25 @@ function pin(d,i,w){if(w==='')return;let t=today();while(parse(t).getDay()!=w)t=
  const[x]=S.plan[d].splice(i,1);plan(t).push(x);save();render()}
 
 /* ---------- profile view ---------- */
-function openProf(d,i){const x=plan(d)[i];if(!x)return;const e=BY[x.id];let m=document.createElement('div');m.className='modal';
- m.innerHTML=`<div class="card prof">${profileBody(e,0)}
- <div class="sets">Sets: <button data-a="-1">−</button><span style="font-size:30px">${'●'.repeat(x.sets)}</span><button data-a="1">+</button></div>
- <select class="note" onchange="this.closest('.modal').remove();pin('${d}',${i},this.value)"><option value="">📌 Move to day…</option>${[1,2,3,4,5,6,0].map(w=>`<option value="${w}">${WD[w]}</option>`).join('')}</select>
- <input class="note" placeholder="📝 note" value="${(S.exNotes[x.id]||'').replace(/"/g,'&quot;')}">
- <div class="btns stick"><button class="pill keep">Keep it 💚</button><button class="pill unm">Unmatch 💔</button></div></div>`;
+function openProf(d,i){const x=plan(d)[i];if(!x)return;const e=BY[x.id];let m=document.createElement('div');m.className='modal full';
+ m.innerHTML=`<div class="card prof pv">${profileBody(e)}
+ <div class="pctl"><div class="sets"><button data-a="-1">−</button><span>${'●'.repeat(x.sets)}</span><button data-a="1">+</button></div>
+ <select class="mv2"><option value="">📅 ${dlabel(d)}</option>${[1,2,3,4,5,6,0].map(w=>`<option value="${w}">➡️ ${WD[w]}</option>`).join('')}</select></div>
+ <input class="exnote" placeholder="📝 note" value="${(S.exNotes[x.id]||'').replace(/"/g,'&quot;')}">
+ <div class="btns"><button class="pill keep">Keep it 💚</button><button class="pill unm">Unmatch 💔</button></div></div>`;
  document.body.appendChild(m);const close=()=>{m.remove();render()};
  m.querySelectorAll('.sets button').forEach(b=>b.onclick=()=>{x.sets=Math.max(3,Math.min(5,x.sets+ +b.dataset.a));save();m.querySelector('.sets span').textContent='●'.repeat(x.sets)});
- m.querySelector('.note').onchange=ev=>{S.exNotes[x.id]=ev.target.value;save()};
- m.querySelector('.keep').onclick=()=>{boom(40);close()};m.querySelector('.unm').onclick=()=>{unmatch(d,i);m.remove()};
- m.onclick=ev=>{if(ev.target===m)close()}}
-function tour(n){document.querySelectorAll('.modal').forEach(m=>m.remove());if(n===0)return chooseSex(()=>tour(1));
+ m.querySelector('.exnote').onchange=ev=>{S.exNotes[x.id]=ev.target.value;save()};
+ m.querySelector('.mv2').onchange=ev=>{m.remove();pin(d,i,ev.target.value)};
+ m.querySelector('.keep').onclick=()=>{boom(40);close()};m.querySelector('.unm').onclick=()=>{unmatch(d,i);m.remove()}}
+function tour(n){document.querySelectorAll('.modal').forEach(m=>m.remove());if(n===0)n=1;
  const T=[null,['👉💚 👈✖','Swipe','Right = add 💚<br>Left = skip ✖<br>↩️ = undo'],['💚📅','Matches','Tap a match to see it.<br>Plan your 📅 week.']][n];
  if(!T){S.tour=1;save();return render()}
- const m=document.createElement('div');m.className='modal';m.innerHTML=`<div class="card prof" style="text-align:center"><div style="font-size:15px">${n+1} / 3</div><div style="font-size:64px">${T[0]}</div><h2>${T[1]}</h2><p style="font-size:22px">${T[2]}</p><div class="btns"><button class="pill keep">Next ➡️</button></div></div>`;
+ const m=document.createElement('div');m.className='modal';m.innerHTML=`<div class="card prof" style="text-align:center"><div style="font-size:15px">${n} / 2</div><div style="font-size:64px">${T[0]}</div><h2>${T[1]}</h2><p style="font-size:22px">${T[2]}</p><div class="btns"><button class="pill keep">Next ➡️</button></div></div>`;
  document.body.appendChild(m);m.querySelector('.keep').onclick=()=>tour(n+1)}
 function chooseSex(next){let m=document.createElement('div');m.className='modal';
- m.innerHTML=`<div class="card prof" style="text-align:center"><h2>Muscle pictures</h2><p>Show me as:</p><div class="btns"><button class="pill sexb" data-s="f" style="font-size:26px">👩 Woman</button><button class="pill sexb" data-s="m" style="font-size:26px">👨 Man</button></div><div style="font-size:15px">1 / 3 · change anytime ⚙️</div></div>`;
- document.body.appendChild(m);m.querySelectorAll('.sexb').forEach(b=>b.onclick=()=>{S.sex=b.dataset.s;save();m.remove();next?next():render()})}
+ m.innerHTML=`<div class="card prof" style="text-align:center"><h2>Muscle pictures</h2><p>Show me as:</p><div class="btns"><button class="pill sexb" data-s="f" style="font-size:26px">👩 Woman</button><button class="pill sexb" data-s="m" style="font-size:26px">👨 Man</button></div><p><a href="CREDITS.md" target="_blank">ⓒ Art credits</a></p></div>`;
+ document.body.appendChild(m);m.querySelectorAll('.sexb').forEach(b=>b.onclick=()=>{S.sex=b.dataset.s;const u=PR.list.find(x=>x.id===UID);if(u){u.sex=S.sex;saveP()}save();m.remove();next?next():render()})}
 /* ---------- week grid with touch drag & drop ---------- */
 function weekView(){let mon=today();while(parse(mon).getDay()!==1)mon=addD(mon,-1);
  V.innerHTML='<h2>📅 Week menu</h2><p style="font-size:15px">Hold & drag pictures to move ✋</p><div class="wk">'+[0,1,2,3,4,5,6,7,8,9,10,11,12,13].map(n=>{const d=addD(mon,n),p=plan(d);if(n==7)return '<h3 style="margin:8px 0 0">➡️ Next week</h3>'+wd(d,p);return wd(d,p)}).join('')+'</div>';
@@ -215,9 +227,12 @@ function loop(){cx.clearRect(0,0,cv.width,cv.height);P.forEach(p=>{p.x+=p.vx;p.y
 
 /* ---------- router ---------- */
 function go(t){tab=t;render()}
-function render(){header();({swipe:swipeView,matches:matchesView,week:weekView,train:trainView})[tab]();
+function render(){header();V.className=tab==='swipe'?'swipe':'';({swipe:swipeView,matches:matchesView,week:weekView,train:trainView})[tab]();
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab))}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.t));
 if(location.hash&&location.hash!=='#prof')tab=location.hash.slice(1);
-render();if(!S.tour)tour(0);else if(location.hash==='#prof')openProf(today(),0);
+{const q=new URLSearchParams(location.search).get('u');if(q&&PR.list[+q-1]){loadUser(PR.list[+q-1].id);if(location.hash==='#prof')openProf(today(),0);if(location.hash==='#prof2')openProf(addD(today(),1),0)}else{render();who()}}
+if(location.search.includes('check'))setTimeout(function chk(){document.querySelectorAll('.chk').forEach(x=>x.remove());const se=document.scrollingElement,c=document.querySelector('.modal .card')||document.querySelector('#deck .top'),
+ ok=se.scrollHeight<=innerHeight&&se.scrollWidth<=innerWidth&&(!c||c.scrollHeight<=c.clientHeight+1)&&document.body.scrollHeight<=innerHeight;
+ const d=document.createElement('div');d.className='chk';d.textContent=(ok?'FIT ✅ ':'OVERFLOW ❌ ')+se.scrollHeight+'/'+innerHeight+(c?' card '+c.scrollHeight+'/'+c.clientHeight:'');document.body.appendChild(d)},50);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
