@@ -33,7 +33,7 @@ const EX = [
 ["bss","Bulgarian Split Squat","L","quads","Quads + Glutes","💪 Dumbbells + Bench",["Back foot on bench","Drop back knee","Push up"],"2C-uNgKwPLE"],
 ["lunge","Dumbbell Walking Lunge","L","quads","Quads + Glutes","💪 Dumbbells",["Big step forward","Back knee down","Step through"],null],
 ["stepup","Dumbbell Step-Up","L","quads","Quads","💪 Dumbbells + Bench",["Foot on bench","Push up to stand","Step down slow"],null],
-["deadlift","Barbell Deadlift","L","hamstrings","Hamstrings + Back","🏋️ Barbell",["Bar over mid-foot","Flat back, push floor","Stand tall"],"op9kVnSso6Q"],
+["deadlift","Barbell Deadlift","L","hamstrings","Glutes + Posterior chain","🏋️ Barbell",["Bar over mid-foot","Flat back, push floor","Stand tall"],"op9kVnSso6Q"],
 ["rdl","Romanian Deadlift","L","hamstrings","Hamstrings","🏋️ Barbell",["Soft knees","Hips back, bar slides down","Squeeze glutes up"],null],
 ["dbrdl","Dumbbell RDL","L","hamstrings","Hamstrings","💪 Dumbbells",["DBs on thighs","Hips back","Stand, squeeze"],null],
 ["cablecurlleg","Cable Leg Curl (ankle strap)","L","hamstrings","Hamstrings","🔗 Cable",["Strap on ankle","Curl heel to butt","Lower slow"],null],
