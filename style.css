@@ -75,3 +75,13 @@ header .warn{font-size:16px;padding:6px 10px;margin-top:0}
 #deck{height:calc(100dvh - 510px);min-height:300px}
 .big{width:68px;height:68px;font-size:32px}.big.u{width:54px;height:54px;font-size:24px}
 .prof .stick{position:sticky;bottom:-14px;background:#fff;padding:10px 0;margin-bottom:-4px}
+.sticky{position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 0 2px;margin:0 -14px;padding-left:14px}
+.sticky .fbar{flex-wrap:wrap;overflow:visible}
+.bdg{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}.bdg b{color:#fff;border-radius:8px;padding:1px 7px;font-size:13px}
+.bdg b.U{background:var(--up)}.bdg b.L{background:var(--low)}
+header .row .pill{padding:8px 12px;font-size:17px}
+.addto{background:#ffffff1f;border-radius:12px;padding:6px 12px;font-size:18px;font-weight:700}
+.toast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);background:#1fc46b;color:#fff;font-size:24px;font-weight:800;text-align:center;padding:18px 26px;border-radius:22px;z-index:99;box-shadow:0 10px 30px #0008;animation:pop .3s}
+@keyframes pop{from{transform:translate(-50%,-50%) scale(.6)}}
+#deck{height:calc(100dvh - 570px);min-height:250px}
+header .row .pill{white-space:nowrap;padding:8px 10px;font-size:16px}

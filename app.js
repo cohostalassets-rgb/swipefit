@@ -4,7 +4,7 @@ const BY=Object.fromEntries(EX.map(e=>[e[0],e]));
 const PUSH='bench incline dbbench dbfly cablefly pushup ohp dbpress lateral cablelateral pushdown ohext skull dips squat goblet frontsquat bss lunge stepup sumo'.split(' ');
 const PULL='pullup latpull cablerow dbrow bbrow straightpull facepull revfly shrug bbcurl dbcurl hammer cablecurl deadlift rdl dbrdl cablecurlleg hipthrust kickback pullthrough glutebridge'.split(' ');
 const pp=id=>PUSH.includes(id)?'push':PULL.includes(id)?'pull':'other';
-const FILT=[['ul','U','💪','Upper'],['ul','L','🦵','Lower'],['ch','A','⬅️','Front'],['ch','P','➡️','Back'],['pp','push','👐','Push'],['pp','pull','🪢','Pull']];
+const FILT=[['ul','U','💪','Upper'],['ul','L','🦵','Lower'],['ch','A','⬅️','Front'],['ch','P','➡️','Back'],['pp','push','👐','Push'],['pp','pull','🪢','Pull'],['pp','other','⭕','Other']];
 function pass(id,skipUL){const f=S.filt||{},k=KIN[id],e=BY[id];
  if(!skipUL&&f.ul&&f.ul.length&&!f.ul.includes(e[2]))return false;
  if(f.ch&&f.ch.length&&!f.ch.some(c=>k.chain===c||k.chain==='B'))return false;
@@ -52,23 +52,26 @@ function wf(y){for(let i=1;i<WK.length;i++)if(y<=WK[i][0]){const[a,b]=[WK[i-1],W
 function regPts(key){const out=[];(REG[key]||[]).forEach(([v,pts])=>{const c=v==='f'?CF:CB;
  [pts,pts.map(([x,y])=>[2*c-x,y])].forEach(P=>out.push(P.map(([x,y])=>S.sex==='f'?[c+(x-c)*wf(y),y]:[x,y]).map(p=>p.map(Math.round).join(',')).join(' ')))});return out}
 let uid=0;
-function anatomy(e){const k=KIN[e[0]],id='c'+(uid++),sx=S.sex==='f'?'f':'m';
- const P=k.hp.flatMap(regPts),Q=k.hs.flatMap(regPts);
- return `<svg viewBox="0 0 1442 1256" class="anat"><defs><clipPath id="${id}p">${P.map(p=>`<polygon points="${p}"/>`).join('')}</clipPath><clipPath id="${id}s">${Q.map(p=>`<polygon points="${p}"/>`).join('')}</clipPath>
- <filter id="${id}g"><feGaussianBlur stdDeviation="9"/></filter></defs>
- <image href="img/body-${sx}-dim.webp" width="1442" height="1256"/>
- <g opacity=".75">${Q.map(p=>`<polygon points="${p}" fill="#ffb02e" filter="url(#${id}g)"/>`).join('')}</g><image href="img/body-${sx}.webp" width="1442" height="1256" clip-path="url(#${id}s)" opacity=".85"/>
- ${P.map(p=>`<polygon points="${p}" fill="#ff1744" filter="url(#${id}g)"/>`).join('')}<image href="img/body-${sx}.webp" width="1442" height="1256" clip-path="url(#${id}p)"/>
- ${P.map(p=>`<polygon points="${p}" fill="#ff1744" fill-opacity=".28" stroke="#ff1744" stroke-width="6" stroke-linejoin="round"/>`).join('')}
- ${Q.map(p=>`<polygon points="${p}" fill="none" stroke="#ff9800" stroke-width="5" stroke-dasharray="14 8"/>`).join('')}
+function anatLayers(hp,hs,id){const sx=S.sex==='f'?'f':'m',I=n=>`img/body-${sx}${n}.webp`;
+ const mk=(k,suf)=>`<mask id="${id}${suf}" maskUnits="userSpaceOnUse" x="0" y="0" width="1442" height="1256">${k.map(r=>`<image href="img/m/${sx}-${r}.png" width="1442" height="1256"/>`).join('')}</mask>`;
+ return `<defs>${mk(hp,'p')}${hs.length?mk(hs,'s'):''}<filter id="${id}g" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="10"/></filter></defs>
+ <image href="${I('-dim')}" width="1442" height="1256"/>
+ ${hs.length?`<g mask="url(#${id}s)"><image href="${I('')}" width="1442" height="1256"/><rect width="1442" height="1256" fill="#ff9800" opacity=".45"/></g>`:''}
+ <g filter="url(#${id}g)" opacity=".9"><rect width="1442" height="1256" fill="#ff1744" mask="url(#${id}p)"/></g>
+ <g mask="url(#${id}p)"><image href="${I('')}" width="1442" height="1256"/><rect width="1442" height="1256" fill="#ff1744" opacity=".35"/></g>`}
+function anatomy(e){const k=KIN[e[0]],id='c'+(uid++);
+ return `<svg viewBox="0 0 1442 1256" class="anat">${anatLayers(k.hp,k.hs,id)}
  <text x="388" y="1245" text-anchor="middle" font-size="44" font-weight="700" fill="#555">FRONT</text><text x="1196" y="1245" text-anchor="middle" font-size="44" font-weight="700" fill="#555">BACK</text></svg>`}
+const GIF={dbfly:'dbfly.gif'};
+const BACKR=['traps','rdelt','upperback','lats','triceps','erectors','glutes','hams','calves'];
+function thumbA(id,st){const k=KIN[id],back=BACKR.includes(k.hp[0]);return `<svg viewBox="${back?'1000 0 392 1256':'190 0 396 1256'}" class="mini" ${st?`style="${st}"`:''}>${anatLayers(k.hp,[],'t'+(uid++))}</svg>`}
 const CH={A:['Anterior chain','#2f7bff'],P:['Posterior chain','#7b3fe4'],B:['Anterior + Posterior','linear-gradient(90deg,#2f7bff,#7b3fe4)'],L:['Lateral (side)','#00a3a3']};
 function kin(e){const k=KIN[e[0]];return `<div class="chips"><span class="chip" style="background:${CH[k.chain][1]}">⛓ ${CH[k.chain][0]}</span><span class="chip" style="background:#e53935">🎯 Prime: ${k.pm}</span>
  <span class="chip" style="background:#fb8c00">🤝 Helpers: ${k.syn}</span>${k.stab&&k.stab!=='—'?`<span class="chip" style="background:#607d8b">🧱 Stabilize: ${k.stab}</span>`:''}<span class="chip" style="background:#2e7d32">⚙️ ${k.act}</span></div>`}
 function profileBody(e,open){return `<h2>${e[1]}</h2><div><span class="tag ${e[2]}">${e[4]}</span><span style="font-size:16px">${e[5]}</span></div>
  <div class="anatwrap">${anatomy(e)}</div>
  <div class="legend"><span style="color:#e53935">■ Prime</span> <span style="color:#fb8c00">▦ Helpers</span></div>
- <div class="mv"><div class="animbox">${animSVG(KIN[e[0]].an)}</div><div style="flex:1"><span class="chip pm" style="background:#e53935">🎯 ${KIN[e[0]].pm}</span>
+ <div class="mv">${GIF[e[0]]?`<div class="animbox"><img src="img/anim/${GIF[e[0]]}" alt="motion" style="width:100%;height:100%;object-fit:cover;border-radius:16px"></div>`:''}<div style="flex:1"><span class="chip pm" style="background:#e53935">🎯 ${KIN[e[0]].pm}</span>
  <details ${open?'open':''}><summary>➕ More</summary>${kin(e)}</details></div></div>
  <div class="steps">${e[6].map((s,i)=>`<div class="step"><b>${i+1}</b><span>${ICON[i]} ${s}</span></div>`).join('')}</div>
  <a class="vid" href="${vidLink(e)}" target="_blank" rel="noopener">▶ Watch how${e[7]?'':' (search)'}</a>`}
@@ -77,7 +80,7 @@ const vidLink=e=>e[7]?'https://www.youtube.com/watch?v='+e[7]:'https://www.youtu
 /* ---------- helpers ---------- */
 const plan=d=>S.plan[d]||(S.plan[d]=[]);
 function deck(d){const t=type(d),used=new Set(plan(d).map(x=>x.id)),sk=new Set(S.skips[d]||[]);
- let L=EX.filter(e=>e[2]===t&&!used.has(e[0])&&pass(e[0],true));
+ let L=EX.filter(e=>(S.mix?true:e[2]===t)&&!used.has(e[0])&&pass(e[0],!S.mix));
  const seed=parse(d).getDate();L.sort((a,b)=>((a[0].charCodeAt(1)*seed)%17)-((b[0].charCodeAt(1)*seed)%17));
  const later=L.filter(e=>S.later[e[0]]&&!sk.has(e[0])),fresh=L.filter(e=>!S.later[e[0]]&&!sk.has(e[0])),skipped=L.filter(e=>sk.has(e[0]));
  return [...later,...fresh,...skipped];}
@@ -90,19 +93,22 @@ function header(){
  if(prevOpen&&Date.now()-prevOpen>DAY)h+='<div class="warn">👋 Welcome back! Pick tomorrow\'s moves 🔥</div>';
  if(unfinished)h+='<div class="warn" onclick="go(\'train\')">⏰ Today\'s workout isn\'t done → tap to train 💪</div>';
  h+=`<div class="row" style="justify-content:space-between;font-size:15px"><a href="CREDITS.md" target="_blank" style="color:#fff9">ⓒ Art credits</a><button class="pill" onclick="chooseSex()" style="padding:4px 12px">⚙️ ${S.sex==='m'?'👨':'👩'}</button></div>`;
- if(tab==='swipe')h+=`<div class="row"><button class="pill ${sel===today()?'on':''}" onclick="pick(0)">Today</button><button class="pill ${sel===addD(today(),1)?'on':''}" onclick="pick(1)">Tomorrow</button><span class="type ${type(sel)}" onclick="flipType()">${TN[type(sel)]}</span></div>
- <div class="row"><div class="dots">${[0,1,2,3,4].map(i=>`<div class="dot ${i<p?'f':''}"></div>`).join('')}</div><b>${p}/5</b></div>`;
+ if(tab==='swipe')h+=`<div class="row"><button class="pill ${sel===today()?'on':''}" onclick="pick(0)">Today</button><button class="pill ${sel===addD(today(),1)?'on':''}" onclick="pick(1)">Tomorrow</button><button class="pill ${S.mix?'':'on'} type ${type(sel)}" onclick="S.mix=0;save();render()" ondblclick="flipType()">${TN[type(sel)]}</button><button class="pill ${S.mix?'on':''}" onclick="S.mix=1;save();render()">🌈 All</button></div>
+ <div class="addto">➕ Adding to: <b>${dlabel(sel)}</b> ${S.mix?'🌈 All':TN[type(sel)]}</div><div class="row"><div class="dots">${[0,1,2,3,4].map(i=>`<div class="dot ${i<p?'f':''}"></div>`).join('')}</div><b>${p}/5</b></div>`;
  T.innerHTML=h;}
+function nextOpen(d){for(let n=1;n<=14;n++){const t=addD(d,n);if(plan(t).length<5)return t}return null}
+function toast(t){const el=document.createElement('div');el.className='toast';el.innerHTML=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2200)}
+function advance(){const n=nextOpen(sel);if(!n)return false;sel=n;toast(`🏆 Day full!<br>Next up: <b>${dlabel(n)}</b> ${TN[type(n)]}`);return true}
 function pick(n){sel=addD(today(),n);render()}
 function flipType(){if(confirm('Switch Upper/Lower pattern?')){S.anchor=addD(S.anchor,1);save();render()}}
 
 /* ---------- swipe ---------- */
 function swipeView(){
  const p=plan(sel);
- if(p.length>=5){V.innerHTML=`<div class="done"><div class="e">🏆</div><h2>${dlabel(sel)} is FULL!</h2><p>5 exercises. You're set! 🎉</p><button class="pill on" onclick="go('matches')">See matches 💚</button></div>`;return}
- const D=deck(sel);if(!D.length){V.innerHTML=filterBar(1)+`<div class="done"><div class="e">🃏</div><h2>No cards</h2><button class="pill on" onclick="fAll()">✨ Show all</button> ${S.last?'<button class="pill" onclick="undo()">↩️ Undo</button>':''}</div>`;return}
+ if(p.length>=5&&advance())return swipeView();if(p.length>=5){V.innerHTML=`<div class="done"><div class="e">🏆</div><h2>${dlabel(sel)} is FULL!</h2><p>5 exercises. You're set! 🎉</p><button class="pill on" onclick="go('matches')">See matches 💚</button></div>`;return}
+ const D=deck(sel);if(!D.length){V.innerHTML=filterBar(!S.mix)+`<div class="done"><div class="e">🃏</div><h2>No cards</h2><button class="pill on" onclick="fAll()">✨ Show all</button> ${S.last?'<button class="pill" onclick="undo()">↩️ Undo</button>':''}</div>`;return}
  const e=D[0],nx=D[1];
- V.innerHTML=filterBar(1)+`<div id="deck">${nx?card(nx,'nx'):''}${card(e,'top')}</div>
+ V.innerHTML=filterBar(!S.mix)+`<div id="deck">${nx?card(nx,'nx'):''}${card(e,'top')}</div>
  <div class="sets">Sets: <button onclick="setS(-1)">−</button><span style="font-size:30px">${'●'.repeat(setsN)}</span><button onclick="setS(1)">+</button></div>
  <div class="btns"><button class="big n" onclick="decide(false)" aria-label="Skip">✖</button><button class="big u" onclick="undo()" ${S.last?'':'disabled'} aria-label="Undo">↩️</button><button class="big y" onclick="decide(true)" aria-label="Like">💚</button></div>
  ${p.length<3?`<div class="warn">⚠️ Need at least 3 (have ${p.length})</div>`:''}`;
@@ -121,21 +127,20 @@ function decide(yes){const el=$('#deck .top');if(!el)return;const id=el.dataset.
  if(yes){plan(sel).push({id,sets:setsN,done:[]});delete S.later[id];boom(plan(sel).length>=5?250:90);navigator.vibrate&&navigator.vibrate(40)}
  else{(S.skips[sel]=S.skips[sel]||[]).push(id);S.later[id]=1}
  S.last={d:sel,id,yes};
- save();setTimeout(render,280)}
+ save();if(yes&&plan(sel).length>=5)setTimeout(()=>{advance();render()},700);else setTimeout(render,280)}
 
 function undo(){const l=S.last;if(!l)return;if(l.yes){const i=plan(l.d).findIndex(x=>x.id===l.id);if(i>=0)plan(l.d).splice(i,1)}else{const a=S.skips[l.d]||[];a.splice(a.lastIndexOf(l.id),1);delete S.later[l.id]}
  S.last=null;sel=l.d;save();render()}
 /* ---------- matches ---------- */
-function matchesView(){const days=Object.keys(S.plan).filter(d=>S.plan[d].length&&d>=today()).sort();
- const any=days.length;let shown=0;
- V.innerHTML='<h2>💚 Matches</h2>'+filterBar()+(any?'':'<div class="done"><div class="e">💔</div><h2>No matches yet</h2><button class="pill on" onclick="go(\'swipe\')">🔥 Swipe</button></div>')+days.filter(d=>S.plan[d].some(x=>pass(x.id))).map(d=>(shown++,`<div class="box"><h3><span class="tag ${type(d)}">${TN[type(d)]}</span> ${dlabel(d)} (${S.plan[d].length})</h3>
- ${S.plan[d].length<3?'<div class="warn">⚠️ Add at least 3</div>':''}
- ${S.plan[d].map((x,i)=>!pass(x.id)?'':`<div class="item"><span onclick="openProf('${d}',${i})" style="display:contents">${thumb(BY[x.id][3])}<span class="nm">${BY[x.id][1]}<br><small>${'●'.repeat(x.sets)} 👆</small></span></span>
- <select onchange="pin('${d}',${i},this.value)"><option value="">📌 Pin</option>${[1,2,3,4,5,6,0].map(w=>`<option value="${w}">${WD[w]}</option>`).join('')}</select>
- <button onclick="unmatch('${d}',${i})" aria-label="Unmatch">💔</button></div>
- <input placeholder="📝 note" value="${(S.exNotes[x.id]||'').replace(/"/g,'&quot;')}" onchange="S.exNotes['${x.id}']=this.value;save()" style="width:100%;font:inherit;font-size:16px;border-radius:10px;border:0;padding:6px">`).join('')}
- <textarea placeholder="📝 Day note" onchange="S.notes['${d}']=this.value;save()" style="width:100%;font:inherit;font-size:16px;border-radius:10px;margin-top:6px">${S.notes[d]||''}</textarea></div>`)).join('');
- if(any&&!shown)V.innerHTML+='<div class="done"><div class="e">🔍</div><h2>None match</h2><button class="pill on" onclick="fAll()">✨ Show all</button></div>'}
+function matchesView(){const all=[];Object.keys(S.plan).filter(d=>d>=today()).sort().forEach(d=>S.plan[d].forEach((x,i)=>all.push({d,i,x})));
+ const L=all.filter(o=>pass(o.x.id));
+ const PPN={push:['👐','Push','#00897b'],pull:['🪢','Pull','#6d4c41'],other:['⭕','Other','#757575']};
+ V.innerHTML='<div class="sticky">'+filterBar()+'</div><h2 style="margin:6px 0">💚 Matches <small>('+L.length+'/'+all.length+')</small></h2>'+
+ (!all.length?'<div class="done"><div class="e">💔</div><h2>No matches yet</h2><button class="pill on" onclick="go(\'swipe\')">🔥 Swipe</button></div>':
+  !L.length?'<div class="done"><div class="e">🔍</div><h2>None match</h2><button class="pill on" onclick="fAll()">✨ Show all</button></div>':
+  L.map(({d,i,x})=>{const e=BY[x.id],k=KIN[x.id],q=PPN[pp(x.id)],c=CH[k.chain];
+  return `<div class="item"><span onclick="openProf('${d}',${i})" style="display:contents">${thumbA(x.id)}<span class="nm">${e[1]}<div class="bdg"><b class="${e[2]}">${e[2]==='U'?'💪 Upper':'🦵 Lower'}</b><b style="background:${c[1]}">${{A:'⬅️ Front',P:'➡️ Back',B:'↔️ Both',L:'↕️ Side'}[k.chain]}</b><b style="background:${q[2]}">${q[0]} ${q[1]}</b><b style="background:#fff;color:#1a1a2e;border:2px solid #1a1a2e">📅 ${dlabel(d)}</b></div></span></span>
+  <button onclick="unmatch('${d}',${i})" aria-label="Unmatch">💔</button></div>`}).join(''))}
 function unmatch(d,i){const[x]=S.plan[d].splice(i,1);S.later[x.id]=1;save();render()}
 function pin(d,i,w){if(w==='')return;let t=today();while(parse(t).getDay()!=w)t=addD(t,1);
  if(t===d)return;if(plan(t).length>=5){alert('That day is full (5) 🏆');return render()}
@@ -145,6 +150,7 @@ function pin(d,i,w){if(w==='')return;let t=today();while(parse(t).getDay()!=w)t=
 function openProf(d,i){const x=plan(d)[i];if(!x)return;const e=BY[x.id];let m=document.createElement('div');m.className='modal';
  m.innerHTML=`<div class="card prof">${profileBody(e,0)}
  <div class="sets">Sets: <button data-a="-1">−</button><span style="font-size:30px">${'●'.repeat(x.sets)}</span><button data-a="1">+</button></div>
+ <select class="note" onchange="this.closest('.modal').remove();pin('${d}',${i},this.value)"><option value="">📌 Move to day…</option>${[1,2,3,4,5,6,0].map(w=>`<option value="${w}">${WD[w]}</option>`).join('')}</select>
  <input class="note" placeholder="📝 note" value="${(S.exNotes[x.id]||'').replace(/"/g,'&quot;')}">
  <div class="btns stick"><button class="pill keep">Keep it 💚</button><button class="pill unm">Unmatch 💔</button></div></div>`;
  document.body.appendChild(m);const close=()=>{m.remove();render()};
@@ -166,7 +172,7 @@ function weekView(){let mon=today();while(parse(mon).getDay()!==1)mon=addD(mon,-
  V.querySelectorAll('.dg').forEach(dnd)}
 function wd(d,p){{
  return `<div class="wd ${type(d)} ${d===today()?'today':''}" data-d="${d}"><b>${WD[parse(d).getDay()]} ${parse(d).getDate()}</b> <span class="tag ${type(d)}">${TN[type(d)]}</span> ${S.hist[d]?'✅':''}
- <div class="th" style="display:flex;flex-wrap:wrap;gap:6px;min-height:64px;margin-top:4px">${p.map((x,i)=>`<div class="dg" data-d="${d}" data-i="${i}" style="background:#fff;border-radius:10px;padding:3px;touch-action:none;width:58px;text-align:center;color:#1a1a2e;font-size:11px;font-weight:700;line-height:1.1">${thumb(BY[x.id][3]).replace('class="mini"','style="width:44px;height:60px"')}<div>${BY[x.id][1].split(' ').slice(-2).join(' ')}</div></div>`).join('')}</div></div>`}}
+ <div class="th" style="display:flex;flex-wrap:wrap;gap:6px;min-height:64px;margin-top:4px">${p.map((x,i)=>`<div class="dg" data-d="${d}" data-i="${i}" style="background:#fff;border-radius:10px;padding:3px;touch-action:none;width:58px;text-align:center;color:#1a1a2e;font-size:11px;font-weight:700;line-height:1.1">${thumbA(x.id,'width:40px;height:72px')}<div>${BY[x.id][1].split(' ').slice(-2).join(' ')}</div></div>`).join('')}</div></div>`}}
 function dnd(el){let g=null;
  let sx0,sy0;el.addEventListener('pointerdown',ev=>{sx0=ev.clientX;sy0=ev.clientY;el.setPointerCapture(ev.pointerId);g=el.cloneNode(true);Object.assign(g.style,{position:'fixed',zIndex:99,pointerEvents:'none',opacity:.85,transform:'scale(1.15)'});document.body.appendChild(g);mv(ev);el.style.opacity=.3});
  const mv=ev=>{if(g){g.style.left=ev.clientX-30+'px';g.style.top=ev.clientY-40+'px'}};
@@ -183,7 +189,7 @@ function dnd(el){let g=null;
 function streak(){let n=0,d=today();if(!S.hist[d])d=addD(d,-1);while(S.hist[d]){n++;d=addD(d,-1)}return n}
 function trainView(){const d=today(),p=plan(d);
  V.innerHTML=`<h2>🏋️ Today <span class="tag ${type(d)}">${TN[type(d)]}</span></h2><div class="box" style="font-size:24px;text-align:center">🔥 ${streak()} day streak · ✅ ${Object.keys(S.hist).length} total</div>`+
- (p.length?p.map((x,i)=>{const e=BY[x.id];return `<div class="item" style="flex-wrap:wrap">${thumb(e[3])}<span class="nm">${e[1]}</span><a href="${vidLink(e)}" target="_blank">▶</a>
+ (p.length?p.map((x,i)=>{const e=BY[x.id];return `<div class="item" style="flex-wrap:wrap">${thumbA(x.id)}<span class="nm">${e[1]}</span><a href="${vidLink(e)}" target="_blank">▶</a>
  <div style="display:flex;gap:8px;width:100%">${Array.from({length:x.sets},(_,k)=>`<button onclick="tick(${i},${k})" style="flex:1;height:60px;font-size:32px;border-radius:14px;border:0;background:${x.done[k]?'#1fc46b':'#eee'}">${x.done[k]?'✔':k+1}</button>`).join('')}</div>
  ${S.exNotes[x.id]?`<small>📝 ${S.exNotes[x.id]}</small>`:''}</div>`}).join('')+`<textarea placeholder="📝 How did it feel?" onchange="S.notes['${d}']=this.value;save()" style="width:100%;font:inherit;font-size:16px;border-radius:10px">${S.notes[d]||''}</textarea>`
  :'<p>No workout today. Swipe some! 🔥</p>')+
